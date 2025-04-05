@@ -156,13 +156,17 @@ function Settings() {
     setSyncMessage('Resetting account...');
     
     try {
+      // Save the current task bank before resetting
+      const currentTaskBank = [...taskBank];
+      
       // Reset local state
       setTokens(1250);
       setXp(0);
       setTickets(8);
       setInventoryItems(initialItems);
       setActiveTasks([]);
-      setTaskBank([]);
+      // Preserve the task bank
+      // setTaskBank([]);
       setEquippedAbilities([null, null, null]);
       setWeaponCooldowns({});
       setClaimedMilestones({});
@@ -182,14 +186,15 @@ function Settings() {
         lastUpdated: new Date()
       });
       
-      // Delete all tasks from Firebase subcollections
+      // Delete only active tasks from Firebase, preserve task bank
       const activeTasksCollectionRef = collection(db, 'users', currentUser.uid, 'activeTasks');
       const activeTasksSnapshot = await getDocs(activeTasksCollectionRef);
       await Promise.all(activeTasksSnapshot.docs.map(doc => deleteDoc(doc.ref)));
       
-      const taskBankCollectionRef = collection(db, 'users', currentUser.uid, 'taskBank');
-      const taskBankSnapshot = await getDocs(taskBankCollectionRef);
-      await Promise.all(taskBankSnapshot.docs.map(doc => deleteDoc(doc.ref)));
+      // Do NOT delete task bank collection
+      // const taskBankCollectionRef = collection(db, 'users', currentUser.uid, 'taskBank');
+      // const taskBankSnapshot = await getDocs(taskBankCollectionRef);
+      // await Promise.all(taskBankSnapshot.docs.map(doc => deleteDoc(doc.ref)));
       
       // Delete all inventory items and re-initialize with defaults
       const inventoryCollectionRef = collection(db, 'users', currentUser.uid, 'inventory');
@@ -202,7 +207,7 @@ function Settings() {
         await setDoc(itemDocRef, item);
       }));
       
-      setSyncMessage('Account successfully reset!');
+      setSyncMessage('Account successfully reset! Task bank preserved.');
       setShowResetConfirm(false);
       
       // Clear success message after 3 seconds

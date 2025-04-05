@@ -1036,11 +1036,6 @@
   color: var(--color-text-secondary);
 }
 
-/* Tasks from bank styling */
-.task-item.from-bank {
-  /* Remove special styling */
-}
-
 .task-item.from-bank::before {
   /* Remove pattern background */
   display: none;
