@@ -1,4 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { useAuth } from './AuthContext';
 
 // Function to get today's date in YYYY-MM-DD format
 const getTodayDate = () => {
@@ -48,6 +51,8 @@ const AppContext = createContext();
 export const useAppContext = () => useContext(AppContext);
 
 export const AppProvider = ({ children }) => {
+  const { currentUser } = useAuth();
+  
   // Currencies
   const [tokens, setTokens] = useState(1250);
   const [xp, setXp] = useState(0);
@@ -75,6 +80,116 @@ export const AppProvider = ({ children }) => {
   // Init today's date in state
   const [todayDate, setTodayDate] = useState(getTodayDate());
   
+  // Load user data from Firestore when user logs in
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          
+          // Set user data from Firestore
+          setTokens(userData.tokens || 1250);
+          setXp(userData.xp || 0);
+          setTickets(userData.tickets || 8);
+          
+          if (userData.inventory && userData.inventory.length > 0) {
+            setInventoryItems(userData.inventory);
+          }
+          
+          if (userData.activeTasks && userData.activeTasks.length > 0) {
+            setActiveTasks(userData.activeTasks);
+          }
+          
+          if (userData.taskBank && userData.taskBank.length > 0) {
+            setTaskBank(userData.taskBank);
+          }
+          
+          if (userData.equippedItems) {
+            setEquippedAbilities(userData.equippedItems);
+          }
+          
+          if (userData.weaponCooldowns) {
+            setWeaponCooldowns(userData.weaponCooldowns);
+          }
+          
+          if (userData.claimedMilestones) {
+            setClaimedMilestones(userData.claimedMilestones);
+          }
+        } else {
+          // If no user data exists, set defaults and create a new document
+          await setDoc(userDocRef, {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            username: currentUser.displayName,
+            tokens: 1250,
+            xp: 0,
+            tickets: 8,
+            inventory: initialItems,
+            activeTasks: [],
+            taskBank: initialTaskBank,
+            equippedItems: [null, null, null],
+            weaponCooldowns: {},
+            claimedMilestones: {}
+          });
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    };
+    
+    loadUserData();
+  }, [currentUser]);
+  
+  // Save user data to Firestore whenever state changes
+  useEffect(() => {
+    const saveUserData = async () => {
+      if (!currentUser) return;
+      
+      try {
+        const userDocRef = doc(db, 'users', currentUser.uid);
+        
+        await updateDoc(userDocRef, {
+          tokens,
+          xp,
+          tickets,
+          inventory: inventoryItems,
+          activeTasks,
+          taskBank,
+          equippedItems: equippedAbilities,
+          weaponCooldowns,
+          claimedMilestones
+        });
+      } catch (error) {
+        console.error("Error saving user data:", error);
+      }
+    };
+    
+    // Debounce function to prevent too many writes
+    const timeoutId = setTimeout(() => {
+      if (currentUser) {
+        saveUserData();
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [
+    currentUser,
+    tokens,
+    xp,
+    tickets,
+    inventoryItems,
+    activeTasks,
+    taskBank,
+    equippedAbilities,
+    weaponCooldowns,
+    claimedMilestones
+  ]);
+  
   // Update today's date at midnight
   useEffect(() => {
     const updateDate = () => {
@@ -83,6 +198,8 @@ export const AppProvider = ({ children }) => {
         setTodayDate(newDate);
         // Reset claimed milestones for the new day
         setClaimedMilestones({});
+        // Reset weapon cooldowns
+        setWeaponCooldowns({});
       }
     };
     
@@ -133,13 +250,6 @@ export const AppProvider = ({ children }) => {
     }
     return 0;
   };
-  
-  // Reset weapon cooldowns at midnight
-  useEffect(() => {
-    if (todayDate !== getTodayDate()) {
-      setWeaponCooldowns({});
-    }
-  }, [todayDate]);
   
   // Use a weapon
   const useWeapon = (weaponId) => {
@@ -199,7 +309,7 @@ export const AppProvider = ({ children }) => {
     
     return { success: false, message: 'Unknown weapon effect' };
   };
-
+  
   // Use item/ability
   const useItem = (itemId) => {
     const item = inventoryItems.find(item => item.id === itemId);

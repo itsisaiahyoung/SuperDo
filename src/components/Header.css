@@ -121,9 +121,53 @@
   color: var(--color-accent);
 }
 
+.currency-icon.tokens {
+  color: #f59e0b;
+}
+
+.currency-icon.xp {
+  color: #10b981;
+}
+
+.currency-icon.tickets {
+  color: #8b5cf6;
+}
+
 .currency-value {
   font-weight: 600;
   font-size: 0.95rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 20px;
+  padding-left: 20px;
+  border-left: 1px solid var(--color-border);
+}
+
+.username {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.logout-button {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-button:hover {
+  color: var(--color-accent);
+  background-color: rgba(var(--color-accent-rgb), 0.1);
 }
 
 /* Modal styles */

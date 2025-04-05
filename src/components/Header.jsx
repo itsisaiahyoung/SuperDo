@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
-import { FaCheckSquare, FaCoins, FaTicketAlt, FaCalendarAlt, FaTimes } from 'react-icons/fa';
+import { FaCheckSquare, FaCoins, FaTrophy, FaTicketAlt, FaCalendarAlt, FaTimes, FaSignOutAlt } from 'react-icons/fa';
 import { useAppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import './Header.css';
 
 function Header() {
-  const { tokens, tickets } = useAppContext();
+  const { tokens, xp, tickets } = useAppContext();
+  const { currentUser, logout } = useAuth();
   const [showEventsModal, setShowEventsModal] = useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   return (
-    <header className="header">
-      <div className="logo">
-        <FaCheckSquare className="logo-icon" />
-        <h1>SuperDo</h1>
-        <span className="season-title">Season One</span>
+    <header className="app-header">
+      <div className="header-left">
+        <div className="logo">
+          <FaCheckSquare className="logo-icon" />
+          <h1>SuperDo</h1>
+          <span className="season-title">Season One</span>
+        </div>
       </div>
       
       <div className="header-right">
@@ -21,16 +33,28 @@ function Header() {
           <span>Events</span>
         </button>
         
-        <div className="currency-container">
-          <div className="currency">
-            <FaCoins className="currency-icon" />
-            <span className="currency-value">{tokens}</span>
+        <div className="currency">
+          <div className="currency-item">
+            <FaCoins className="currency-icon tokens" />
+            <span>{tokens}</span>
           </div>
           
-          <div className="currency">
-            <FaTicketAlt className="currency-icon" />
-            <span className="currency-value">{tickets}</span>
+          <div className="currency-item">
+            <FaTrophy className="currency-icon xp" />
+            <span>{xp}</span>
           </div>
+          
+          <div className="currency-item">
+            <FaTicketAlt className="currency-icon tickets" />
+            <span>{tickets}</span>
+          </div>
+        </div>
+        
+        <div className="user-info">
+          <span className="username">{currentUser?.displayName}</span>
+          <button className="logout-button" onClick={handleLogout}>
+            <FaSignOutAlt />
+          </button>
         </div>
       </div>
       
