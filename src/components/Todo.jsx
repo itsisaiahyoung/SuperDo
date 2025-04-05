@@ -66,6 +66,9 @@ function Todo() {
   const [abilitySelectedTask, setAbilitySelectedTask] = useState(null);
   const abilitiesDropdownRef = useRef(null);
   
+  // New state for ability animation
+  const [abilityAnimation, setAbilityAnimation] = useState(null);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
@@ -81,6 +84,17 @@ function Todo() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [activeSlot]);
+  
+  // Clean up animation after it's done
+  useEffect(() => {
+    if (abilityAnimation) {
+      const timer = setTimeout(() => {
+        setAbilityAnimation(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [abilityAnimation]);
 
   // Get tasks due today using the context function
   const tasksDueToday = activeTasks.filter(task => !task.completed && isTaskDueToday(task));
@@ -365,18 +379,42 @@ function Todo() {
 
   // Use an equipped ability
   const useAbility = (ability) => {
-    switch(ability.name) {
-      case 'Random Task':
-        generateRandomTask();
-        break;
-      case 'Flip Coin':
-        flipCoin();
-        break;
-      case 'Card Monte':
-        startMontyGame();
-        break;
+    // Show animation overlay
+    setAbilityAnimation({
+      name: ability.name,
+      icon: ability.icon,
+      color: getAbilityColor(ability)
+    });
+    
+    // Execute ability after animation starts
+    setTimeout(() => {
+      switch(ability.name) {
+        case 'Random Task':
+          generateRandomTask();
+          break;
+        case 'Flip Coin':
+          flipCoin();
+          break;
+        case 'Card Monte':
+          startMontyGame();
+          break;
+        default:
+          console.log(`Using ability: ${ability.name}`);
+      }
+    }, 1000);
+  };
+
+  // Get color for ability animation
+  const getAbilityColor = (ability) => {
+    switch(ability.type) {
+      case 'ability':
+        return '#4a6bdf';
+      case 'armor':
+        return '#10b981';
+      case 'weapon':
+        return '#ef4444';
       default:
-        console.log(`Using ability: ${ability.name}`);
+        return '#3b82f6';
     }
   };
 
@@ -413,6 +451,23 @@ function Todo() {
 
   return (
     <div className="todo-container">
+      {/* Animation Overlay */}
+      {abilityAnimation && (
+        <div className="ability-animation-overlay">
+          <div className="ability-animation-content" style={{ backgroundColor: abilityAnimation.color }}>
+            <div className="ability-animation-icon">
+              {getAbilityIcon(abilityAnimation.icon)}
+            </div>
+            <div className="ability-animation-name">{abilityAnimation.name}</div>
+            <div className="ability-animation-particles">
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="particle"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Mobile Stats Display */}
       <div className="mobile-stats-display">
         <div className="mobile-stat-item">

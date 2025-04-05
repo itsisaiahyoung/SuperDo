@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FaCheckSquare, FaCoins, FaTrophy, FaTicketAlt, FaCalendarAlt, FaTimes, FaSignOutAlt } from 'react-icons/fa';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import seasonImage from '../assets/images/superdoseason1.png';
 import './Header.css';
 
 function Header() {
@@ -60,7 +61,7 @@ function Header() {
         <div className="modal-overlay">
           <div className="events-modal">
             <div className="modal-header">
-              <h2>Upcoming Events</h2>
+              <h2>Season One</h2>
               <button 
                 className="close-button"
                 onClick={() => setShowEventsModal(false)}
@@ -69,28 +70,8 @@ function Header() {
               </button>
             </div>
             
-            <div className="events-list">
-              <div className="event-item">
-                <div className="event-date">
-                  <div className="event-month">JUN</div>
-                  <div className="event-day">15</div>
-                </div>
-                <div className="event-content">
-                  <h3>Summer Challenge</h3>
-                  <p>Complete daily tasks to earn double tokens in our special summer event!</p>
-                </div>
-              </div>
-              
-              <div className="event-item">
-                <div className="event-date">
-                  <div className="event-month">JUL</div>
-                  <div className="event-day">01</div>
-                </div>
-                <div className="event-content">
-                  <h3>New Abilities Release</h3>
-                  <p>Check out the new abilities coming to the shop in July!</p>
-                </div>
-              </div>
+            <div className="season-image-container">
+              <img src={seasonImage} alt="SuperDo Season One" className="season-image" />
             </div>
           </div>
         </div>

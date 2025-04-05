@@ -408,4 +408,31 @@
     align-items: center;
     text-align: center;
   }
+}
+
+.season-image-container {
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.season-image {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 480px) {
+  .events-modal {
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .season-image {
+    width: 100%;
+  }
 } 
