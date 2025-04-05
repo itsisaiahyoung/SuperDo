@@ -2,7 +2,7 @@
   width: 100%;
   max-width: 700px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .task-form {
@@ -1193,4 +1193,115 @@
   height: 50px;
   background-color: var(--color-accent);
   border-radius: 5px;
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .todo-container {
+    padding: 0.75rem;
+  }
+
+  .task-form {
+    padding: 10px;
+  }
+
+  .task-form.expanded {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .task-input {
+    padding: 8px 10px;
+    font-size: 0.95rem;
+  }
+
+  .option-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .option-label {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .option-controls {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .task-tabs button {
+    flex: 1;
+    min-width: 80px;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.85rem;
+  }
+  
+  .task-item {
+    padding: 10px;
+  }
+  
+  .task-meta {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .add-button {
+    padding: 8px;
+  }
+  
+  .ability-slots {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .ability-slot {
+    width: 75px;
+    height: 75px;
+  }
+  
+  .ability-icon {
+    font-size: 1.5rem;
+  }
+  
+  .ability-name {
+    font-size: 0.7rem;
+  }
+  
+  .daily-progress-container {
+    padding: 12px;
+  }
+  
+  .daily-progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .daily-progress-stats {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .milestone {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .milestone-indicator {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .milestone-reward {
+    width: auto;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
 } 

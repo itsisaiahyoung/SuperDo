@@ -2,7 +2,7 @@
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 /* Filters */
@@ -451,4 +451,76 @@
   color: white;
   padding: 2px 0;
   font-size: 0.85rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .inventory-container {
+    padding: 0.75rem;
+  }
+  
+  .inventory-filters {
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .filter-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .item-modal {
+    width: 95%;
+  }
+}
+
+@media (max-width: 480px) {
+  .inventory-slots {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+  }
+  
+  .inventory-slot {
+    padding: 0.4rem;
+  }
+  
+  .item-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.35rem;
+  }
+  
+  .item-name {
+    font-size: 0.75rem;
+  }
+  
+  .item-modal {
+    max-width: 100%;
+    width: 95%;
+    margin: 0 1rem;
+  }
+  
+  .item-detail-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .item-description {
+    font-size: 0.9rem;
+  }
+  
+  .use-button {
+    width: 100%;
+  }
+  
+  .item-actions {
+    width: 100%;
+  }
+  
+  .lootbox-detail-icon,
+  .ticket-detail-icon {
+    width: 100px;
+    height: 100px;
+  }
 }
