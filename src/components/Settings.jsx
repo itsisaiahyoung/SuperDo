@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { 
   FaMoon, FaBell, FaSync, FaFileExport, FaTrashAlt, 
   FaDatabase, FaStar, FaRegStar, FaCalendarAlt, FaCoins,
-  FaPlus, FaCrown, FaCloudUploadAlt
+  FaPlus, FaCrown, FaCloudUploadAlt, FaUndo
 } from 'react-icons/fa';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { doc, setDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import './Settings.css';
 
@@ -16,15 +16,27 @@ function Settings() {
     addTaskToBank, 
     removeTaskFromBank,
     tokens,
+    setTokens,
     xp,
+    setXp,
     tickets,
+    setTickets,
     inventoryItems,
-    activeTasks
+    setInventoryItems,
+    activeTasks,
+    setActiveTasks,
+    setTaskBank,
+    setEquippedAbilities,
+    setWeaponCooldowns,
+    setClaimedMilestones,
+    initialItems
   } = useAppContext();
   
   const { currentUser } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   
   // Task form state
   const [newTask, setNewTask] = useState('');
@@ -130,6 +142,78 @@ function Settings() {
       setSyncMessage(`Error: ${error.message}`);
     } finally {
       setIsSyncing(false);
+    }
+  };
+  
+  // Reset account function
+  const resetAccount = async () => {
+    if (!currentUser) {
+      setSyncMessage('Error: You must be logged in to reset account');
+      return;
+    }
+    
+    setIsResetting(true);
+    setSyncMessage('Resetting account...');
+    
+    try {
+      // Reset local state
+      setTokens(1250);
+      setXp(0);
+      setTickets(8);
+      setInventoryItems(initialItems);
+      setActiveTasks([]);
+      setTaskBank([]);
+      setEquippedAbilities([null, null, null]);
+      setWeaponCooldowns({});
+      setClaimedMilestones({});
+      
+      // Update user document in Firebase
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: currentUser.displayName || 'User',
+        tokens: 1250,
+        xp: 0,
+        tickets: 8,
+        equippedItems: [null, null, null],
+        weaponCooldowns: {},
+        claimedMilestones: {},
+        lastUpdated: new Date()
+      });
+      
+      // Delete all tasks from Firebase subcollections
+      const activeTasksCollectionRef = collection(db, 'users', currentUser.uid, 'activeTasks');
+      const activeTasksSnapshot = await getDocs(activeTasksCollectionRef);
+      await Promise.all(activeTasksSnapshot.docs.map(doc => deleteDoc(doc.ref)));
+      
+      const taskBankCollectionRef = collection(db, 'users', currentUser.uid, 'taskBank');
+      const taskBankSnapshot = await getDocs(taskBankCollectionRef);
+      await Promise.all(taskBankSnapshot.docs.map(doc => deleteDoc(doc.ref)));
+      
+      // Delete all inventory items and re-initialize with defaults
+      const inventoryCollectionRef = collection(db, 'users', currentUser.uid, 'inventory');
+      const inventorySnapshot = await getDocs(inventoryCollectionRef);
+      await Promise.all(inventorySnapshot.docs.map(doc => deleteDoc(doc.ref)));
+      
+      // Re-add initial inventory items
+      await Promise.all(initialItems.map(async (item) => {
+        const itemDocRef = doc(db, 'users', currentUser.uid, 'inventory', item.id.toString());
+        await setDoc(itemDocRef, item);
+      }));
+      
+      setSyncMessage('Account successfully reset!');
+      setShowResetConfirm(false);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSyncMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error resetting account:', error);
+      setSyncMessage(`Error: ${error.message}`);
+    } finally {
+      setIsResetting(false);
     }
   };
   
@@ -348,13 +432,40 @@ function Settings() {
           >
             <FaCloudUploadAlt /> {isSyncing ? 'Syncing...' : 'Push to Firebase'}
           </button>
-          <button className="settings-button danger">
-            <FaTrashAlt /> Reset App
+          <button 
+            className="settings-button danger"
+            onClick={() => setShowResetConfirm(true)}
+          >
+            <FaUndo /> Reset Account
           </button>
         </div>
         {syncMessage && (
           <div className={`sync-message ${syncMessage.includes('Error') ? 'error' : 'success'}`}>
             {syncMessage}
+          </div>
+        )}
+        
+        {/* Reset confirmation dialog */}
+        {showResetConfirm && (
+          <div className="reset-confirmation">
+            <p>Are you sure you want to reset your account? This will delete all your progress, including tasks, inventory, tokens, and XP.</p>
+            <p>This action cannot be undone.</p>
+            <div className="reset-actions">
+              <button 
+                className="settings-button danger"
+                onClick={resetAccount}
+                disabled={isResetting}
+              >
+                {isResetting ? 'Resetting...' : 'Yes, Reset Everything'}
+              </button>
+              <button 
+                className="settings-button"
+                onClick={() => setShowResetConfirm(false)}
+                disabled={isResetting}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -6,8 +6,10 @@
 
 .shop-container h2 {
   text-align: center;
-  margin-bottom: 1rem;
-  color: #333;
+  margin-bottom: 1.25rem;
+  color: var(--color-text-primary);
+  font-size: 1.75rem;
+  font-weight: 600;
 }
 
 /* Token Balance */
@@ -16,16 +18,18 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
-  background-color: rgba(255, 215, 0, 0.1);
-  padding: 0.5rem 1rem;
+  background-color: var(--color-bg-secondary);
+  padding: 0.75rem 1.25rem;
   border-radius: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  font-size: 1.1rem;
 }
 
 .token-icon {
-  color: gold;
-  margin-right: 0.5rem;
-  font-size: 1.2rem;
+  color: #f59e0b;
+  margin-right: 0.75rem;
+  font-size: 1.3rem;
 }
 
 /* Featured Slideshow */
@@ -89,22 +93,29 @@
 
 .slideshow-dots {
   position: absolute;
-  bottom: 10px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 8px;
+  max-width: 80%;
+  flex-wrap: wrap;
+  justify-content: center;
+  z-index: 10;
 }
 
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
   border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.5);
   border: none;
   padding: 0;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin: 2px;
 }
 
 .dot.active {
@@ -175,13 +186,13 @@
 }
 
 .shop-item {
-  background-color: white;
+  background-color: var(--color-bg-secondary);
   border-radius: 10px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
   position: relative;
@@ -189,7 +200,7 @@
 
 .shop-item:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .shop-item.owned {
@@ -212,7 +223,7 @@
 .shop-item p {
   font-size: 0.8rem;
   text-align: center;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 0.5rem;
   flex-grow: 1;
 }
@@ -244,13 +255,13 @@
 }
 
 .purchase-modal {
-  background-color: white;
+  background-color: var(--color-bg-secondary);
   border-radius: 12px;
   padding: 1.5rem;
   width: 90%;
   max-width: 400px;
   position: relative;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
 }
 
 .close-button {
@@ -261,12 +272,13 @@
   border: none;
   font-size: 1.2rem;
   cursor: pointer;
-  color: #777;
+  color: var(--color-text-secondary);
 }
 
 .purchase-modal h2 {
   margin-bottom: 1.5rem;
   text-align: center;
+  color: var(--color-text-primary);
 }
 
 .modal-item-details {
@@ -340,24 +352,33 @@
 
 /* Responsive adjustments for mobile */
 @media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  
   .shop-container {
-    padding: 0.75rem;
+    padding: 1rem 0.75rem;
+    overflow-x: hidden;
   }
   
-  .featured-slideshow {
-    height: 180px;
-    margin-bottom: 1.5rem;
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+    padding-bottom: 70px;
   }
   
-  .shop-categories {
-    flex-wrap: wrap;
-    gap: 0.5rem;
+  .slideshow-dots {
+    bottom: 10px;
+    gap: 6px;
+    max-width: 90%;
   }
   
-  .shop-categories button {
-    padding: 0.5rem 0.75rem;
-    margin: 0 0.25rem;
-    font-size: 0.9rem;
+  .dot {
+    width: 6px;
+    height: 6px;
+    min-width: 6px;
+    min-height: 6px;
+    margin: 2px;
   }
 }
 
@@ -372,6 +393,7 @@
   
   .shop-item {
     padding: 0.75rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
   }
   
   .shop-item h3 {
@@ -385,6 +407,13 @@
   .modal-featured-image {
     width: 120px;
     height: 120px;
+  }
+  
+  .token-balance {
+    padding: 0.6rem 1rem;
+    border-radius: 16px;
+    background-color: var(--color-bg-accent);
+    margin-bottom: 1.25rem;
   }
 }
 
@@ -413,7 +442,8 @@
   }
   
   .shop-item {
-    padding: 0.6rem;
+    padding: 0.75rem;
+    background-color: var(--color-bg-accent);
   }
   
   .shop-categories button {
@@ -437,5 +467,18 @@
   
   .cancel-button, .confirm-button {
     width: 100%;
+  }
+  
+  .slideshow-dots {
+    bottom: 8px;
+    gap: 4px;
+  }
+  
+  .dot {
+    width: 5px;
+    height: 5px;
+    min-width: 5px;
+    min-height: 5px;
+    margin: 1px;
   }
 } 

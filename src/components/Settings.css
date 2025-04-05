@@ -685,4 +685,34 @@ input:checked + .slider:before {
   background-color: rgba(255, 71, 87, 0.1);
   color: #ff4757;
   border: 1px solid #ff4757;
+}
+
+/* Add these styles for the reset confirmation dialog */
+.reset-confirmation {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: #fff1f0;
+  border: 1px solid #ffccc7;
+}
+
+.reset-confirmation p {
+  margin-bottom: 0.75rem;
+  color: #cf1322;
+}
+
+.reset-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.settings-button.danger {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.settings-button.danger:hover {
+  background-color: #ff7875;
 } 

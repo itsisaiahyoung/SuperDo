@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
 
@@ -93,7 +93,7 @@ const initialItems = [
   { id: 10, name: 'Token Generator', type: 'weapon', icon: 'money-bill', description: 'Add 500 tokens (5% success rate)', owned: true, rarity: 'common', cooldown: 'daily' }
 ];
 
-// Initial task bank data
+// Initial task bank data is empty
 const initialTaskBank = [];
 
 // Define milestone rewards
@@ -156,20 +156,8 @@ export const AppProvider = ({ children }) => {
           setXp(userData.xp || 0);
           setTickets(userData.tickets || 8);
           
-          if (userData.inventory && userData.inventory.length > 0) {
-            setInventoryItems(userData.inventory);
-          }
-          
-          if (userData.activeTasks && userData.activeTasks.length > 0) {
-            setActiveTasks(userData.activeTasks);
-          }
-          
-          if (userData.taskBank && userData.taskBank.length > 0) {
-            setTaskBank(userData.taskBank);
-          }
-          
-          if (userData.equippedItems) {
-            setEquippedAbilities(userData.equippedItems);
+          if (userData.equippedAbilities) {
+            setEquippedAbilities(userData.equippedAbilities);
           }
           
           if (userData.weaponCooldowns) {
@@ -179,6 +167,44 @@ export const AppProvider = ({ children }) => {
           if (userData.claimedMilestones) {
             setClaimedMilestones(userData.claimedMilestones);
           }
+          
+          // Load inventory from inventory subcollection
+          const inventoryCollectionRef = collection(db, 'users', currentUser.uid, 'inventory');
+          const inventorySnapshot = await getDocs(inventoryCollectionRef);
+          
+          const inventoryItems = [];
+          inventorySnapshot.forEach(doc => {
+            inventoryItems.push(doc.data());
+          });
+          
+          if (inventoryItems.length > 0) {
+            setInventoryItems(inventoryItems);
+          } else {
+            // If no inventory items exist, use initial items
+            setInventoryItems(initialItems);
+          }
+          
+          // Load active tasks from active tasks collection
+          const activeTasksCollectionRef = collection(db, 'users', currentUser.uid, 'activeTasks');
+          const activeTasksSnapshot = await getDocs(activeTasksCollectionRef);
+          
+          const activeTasks = [];
+          activeTasksSnapshot.forEach(doc => {
+            activeTasks.push(doc.data());
+          });
+          
+          setActiveTasks(activeTasks);
+          
+          // Load task bank from task bank collection
+          const taskBankCollectionRef = collection(db, 'users', currentUser.uid, 'taskBank');
+          const taskBankSnapshot = await getDocs(taskBankCollectionRef);
+          
+          const taskBank = [];
+          taskBankSnapshot.forEach(doc => {
+            taskBank.push(doc.data());
+          });
+          
+          setTaskBank(taskBank);
         } else {
           // If no user data exists, set defaults and create a new document
           await setDoc(userDocRef, {
@@ -188,13 +214,18 @@ export const AppProvider = ({ children }) => {
             tokens: 1250,
             xp: 0,
             tickets: 8,
-            inventory: initialItems,
-            activeTasks: [],
-            taskBank: initialTaskBank,
             equippedItems: [null, null, null],
             weaponCooldowns: {},
             claimedMilestones: {}
           });
+          
+          // Initialize inventory with initial items
+          await Promise.all(initialItems.map(async (item) => {
+            const itemDocRef = doc(db, 'users', currentUser.uid, 'inventory', item.id.toString());
+            await setDoc(itemDocRef, item);
+          }));
+          
+          setInventoryItems(initialItems);
         }
       } catch (error) {
         console.error("Error loading user data:", error);
@@ -204,7 +235,7 @@ export const AppProvider = ({ children }) => {
     loadUserData();
   }, [currentUser]);
   
-  // Save user data to Firestore whenever state changes
+  // Save user document data to Firestore whenever state changes
   useEffect(() => {
     const saveUserData = async () => {
       if (!currentUser) return;
@@ -212,16 +243,15 @@ export const AppProvider = ({ children }) => {
       try {
         const userDocRef = doc(db, 'users', currentUser.uid);
         
+        // Only save main user properties to user document
         await updateDoc(userDocRef, {
           tokens,
           xp,
           tickets,
-          inventory: inventoryItems,
-          activeTasks,
-          taskBank,
           equippedItems: equippedAbilities,
           weaponCooldowns,
-          claimedMilestones
+          claimedMilestones,
+          lastUpdated: new Date()
         });
       } catch (error) {
         console.error("Error saving user data:", error);
@@ -241,13 +271,137 @@ export const AppProvider = ({ children }) => {
     tokens,
     xp,
     tickets,
-    inventoryItems,
-    activeTasks,
-    taskBank,
     equippedAbilities,
     weaponCooldowns,
     claimedMilestones
   ]);
+  
+  // Save inventory items to Firestore whenever inventory changes
+  useEffect(() => {
+    const saveInventoryData = async () => {
+      if (!currentUser || !inventoryItems.length) return;
+      
+      try {
+        // Save each inventory item as a separate document in the subcollection
+        await Promise.all(inventoryItems.map(async (item) => {
+          const itemDocRef = doc(db, 'users', currentUser.uid, 'inventory', item.id.toString());
+          await setDoc(itemDocRef, {
+            ...item,
+            lastUpdated: new Date()
+          });
+        }));
+      } catch (error) {
+        console.error("Error saving inventory data:", error);
+      }
+    };
+    
+    // Debounce function to prevent too many writes
+    const timeoutId = setTimeout(() => {
+      if (currentUser) {
+        saveInventoryData();
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [currentUser, inventoryItems]);
+  
+  // Save tasks to Firestore when they change
+  useEffect(() => {
+    const saveTaskData = async () => {
+      if (!currentUser) return;
+      
+      try {
+        // Save active tasks to subcollection
+        const activeTasksToDelete = new Set();
+        
+        // Get current active tasks in Firestore
+        const activeTasksCollectionRef = collection(db, 'users', currentUser.uid, 'activeTasks');
+        const activeTasksSnapshot = await getDocs(activeTasksCollectionRef);
+        
+        // Collect IDs of tasks that may need to be deleted
+        activeTasksSnapshot.forEach(doc => {
+          activeTasksToDelete.add(doc.id);
+        });
+        
+        // Save current active tasks and remove IDs from delete set
+        await Promise.all(activeTasks.map(async (task) => {
+          const taskId = task.id.toString();
+          const taskDocRef = doc(db, 'users', currentUser.uid, 'activeTasks', taskId);
+          await setDoc(taskDocRef, {
+            ...task,
+            lastUpdated: new Date()
+          });
+          activeTasksToDelete.delete(taskId);
+        }));
+        
+        // Delete tasks that no longer exist
+        await Promise.all([...activeTasksToDelete].map(async (taskId) => {
+          const taskDocRef = doc(db, 'users', currentUser.uid, 'activeTasks', taskId);
+          await deleteDoc(taskDocRef);
+        }));
+      } catch (error) {
+        console.error("Error saving active tasks data:", error);
+      }
+    };
+    
+    // Debounce function to prevent too many writes
+    const timeoutId = setTimeout(() => {
+      if (currentUser) {
+        saveTaskData();
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [currentUser, activeTasks]);
+  
+  // Save task bank to Firestore when it changes
+  useEffect(() => {
+    const saveTaskBankData = async () => {
+      if (!currentUser) return;
+      
+      try {
+        // Save task bank items to subcollection
+        const taskBankToDelete = new Set();
+        
+        // Get current task bank items in Firestore
+        const taskBankCollectionRef = collection(db, 'users', currentUser.uid, 'taskBank');
+        const taskBankSnapshot = await getDocs(taskBankCollectionRef);
+        
+        // Collect IDs of tasks that may need to be deleted
+        taskBankSnapshot.forEach(doc => {
+          taskBankToDelete.add(doc.id);
+        });
+        
+        // Save current task bank items and remove IDs from delete set
+        await Promise.all(taskBank.map(async (task) => {
+          const taskId = task.id.toString();
+          const taskDocRef = doc(db, 'users', currentUser.uid, 'taskBank', taskId);
+          await setDoc(taskDocRef, {
+            ...task,
+            lastUpdated: new Date()
+          });
+          taskBankToDelete.delete(taskId);
+        }));
+        
+        // Delete tasks that no longer exist
+        await Promise.all([...taskBankToDelete].map(async (taskId) => {
+          const taskDocRef = doc(db, 'users', currentUser.uid, 'taskBank', taskId);
+          await deleteDoc(taskDocRef);
+        }));
+      } catch (error) {
+        console.error("Error saving task bank data:", error);
+      }
+    };
+    
+    // Debounce function to prevent too many writes
+    const timeoutId = setTimeout(() => {
+      if (currentUser) {
+        saveTaskBankData();
+      }
+    }, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [currentUser, taskBank]);
   
   // Update today's date at midnight
   useEffect(() => {
@@ -438,12 +592,40 @@ export const AppProvider = ({ children }) => {
   };
   
   // Task Bank Functions
-  const addTaskToBank = (newTask) => {
-    setTaskBank([...taskBank, { ...newTask, id: Date.now() }]);
+  const addTaskToBank = async (newTask) => {
+    if (!currentUser) return;
+    
+    const taskWithId = { ...newTask, id: Date.now() };
+    
+    // Update local state
+    setTaskBank(prevTasks => [...prevTasks, taskWithId]);
+    
+    try {
+      // Save to Firebase subcollection
+      const taskDocRef = doc(db, 'users', currentUser.uid, 'taskBank', taskWithId.id.toString());
+      await setDoc(taskDocRef, {
+        ...taskWithId,
+        userId: currentUser.uid,
+        lastUpdated: new Date()
+      });
+    } catch (error) {
+      console.error("Error adding task to bank:", error);
+    }
   };
   
-  const removeTaskFromBank = (taskId) => {
-    setTaskBank(taskBank.filter(task => task.id !== taskId));
+  const removeTaskFromBank = async (taskId) => {
+    if (!currentUser) return;
+    
+    // Update local state
+    setTaskBank(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    
+    try {
+      // Delete from Firebase subcollection
+      const taskDocRef = doc(db, 'users', currentUser.uid, 'taskBank', taskId.toString());
+      await deleteDoc(taskDocRef);
+    } catch (error) {
+      console.error("Error removing task from bank:", error);
+    }
   };
   
   // Check if a task is due today
@@ -478,7 +660,9 @@ export const AppProvider = ({ children }) => {
   };
   
   // Add task to active list with current date
-  const addTaskToActive = (task) => {
+  const addTaskToActive = async (task) => {
+    if (!currentUser) return;
+    
     // Generate a new ID only if one doesn't already exist
     const taskId = task.id || Date.now();
     
@@ -490,26 +674,39 @@ export const AppProvider = ({ children }) => {
       dueDate: todayDate // for one-time tasks, set due date to today
     };
     
-    setActiveTasks(prevTasks => {
-      // Check if task already exists first
-      const taskExists = prevTasks.some(t => 
-        t.text === task.text && 
-        t.rarity === task.rarity && 
-        t.repetition === task.repetition
-      );
-      
-      // Only add if it doesn't exist
-      if (!taskExists) {
-        return [...prevTasks, newTask];
-      }
-      return prevTasks;
-    });
+    // Check if task already exists
+    const taskExists = activeTasks.some(t => 
+      t.text === task.text && 
+      t.rarity === task.rarity && 
+      t.repetition === task.repetition
+    );
     
-    return newTask; // Return the newly created task
+    // Only add if it doesn't exist
+    if (!taskExists) {
+      setActiveTasks(prevTasks => [...prevTasks, newTask]);
+      
+      try {
+        // Save to Firebase subcollection
+        const taskDocRef = doc(db, 'users', currentUser.uid, 'activeTasks', newTask.id.toString());
+        await setDoc(taskDocRef, {
+          ...newTask,
+          userId: currentUser.uid,
+          lastUpdated: new Date()
+        });
+      } catch (error) {
+        console.error("Error adding task to active list:", error);
+      }
+      
+      return newTask; // Return the newly created task
+    }
+    
+    return null;
   };
   
   // Complete task and check for milestone rewards
-  const completeTask = (taskId) => {
+  const completeTask = async (taskId) => {
+    if (!currentUser) return;
+    
     setActiveTasks(prevTasks => {
       const updatedTasks = prevTasks.map(task => 
         task.id === taskId ? { ...task, completed: true } : task
@@ -528,6 +725,15 @@ export const AppProvider = ({ children }) => {
         
         // Schedule milestone check after state update
         setTimeout(() => checkAndRewardMilestones(), 0);
+        
+        // Update the task in Firebase
+        try {
+          const updatedTask = { ...completedTask, completed: true, lastUpdated: new Date() };
+          const taskDocRef = doc(db, 'users', currentUser.uid, 'activeTasks', taskId.toString());
+          setDoc(taskDocRef, updatedTask);
+        } catch (error) {
+          console.error("Error completing task in Firebase:", error);
+        }
       }
       
       return updatedTasks;
@@ -570,8 +776,19 @@ export const AppProvider = ({ children }) => {
     });
   };
   
-  const removeTask = (taskId) => {
-    setActiveTasks(activeTasks.filter(task => task.id !== taskId));
+  const removeTask = async (taskId) => {
+    if (!currentUser) return;
+    
+    // Update local state
+    setActiveTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    
+    try {
+      // Delete from Firebase subcollection
+      const taskDocRef = doc(db, 'users', currentUser.uid, 'activeTasks', taskId.toString());
+      await deleteDoc(taskDocRef);
+    } catch (error) {
+      console.error("Error removing task:", error);
+    }
   };
   
   // Get milestone data
@@ -583,7 +800,10 @@ export const AppProvider = ({ children }) => {
   };
   
   // Update specific inventory item
-  const updateInventoryItem = (itemId, updates) => {
+  const updateInventoryItem = async (itemId, updates) => {
+    if (!currentUser) return;
+    
+    // Update local state
     setInventoryItems(prevItems => 
       prevItems.map(item => 
         item.id === itemId 
@@ -591,6 +811,31 @@ export const AppProvider = ({ children }) => {
           : item
       )
     );
+    
+    try {
+      // Update in Firebase subcollection
+      const itemDocRef = doc(db, 'users', currentUser.uid, 'inventory', itemId.toString());
+      const itemSnapshot = await getDoc(itemDocRef);
+      
+      if (itemSnapshot.exists()) {
+        await updateDoc(itemDocRef, {
+          ...updates,
+          lastUpdated: new Date()
+        });
+      } else {
+        // If item doesn't exist, get it from local state and save it
+        const item = inventoryItems.find(item => item.id === itemId);
+        if (item) {
+          await setDoc(itemDocRef, {
+            ...item,
+            ...updates,
+            lastUpdated: new Date()
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error updating inventory item:", error);
+    }
   };
   
   // Context value
@@ -625,11 +870,14 @@ export const AppProvider = ({ children }) => {
     getTasksDueToday,
     milestoneRewards,
     claimedMilestones,
+    setClaimedMilestones,
     getMilestoneData,
     weaponCooldowns,
+    setWeaponCooldowns,
     getXpBonus,
     getTokenBonus,
-    updateInventoryItem
+    updateInventoryItem,
+    initialItems
   };
   
   return (

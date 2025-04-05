@@ -25,7 +25,8 @@ import {
   FaCheckCircle,
   FaTachometerAlt,
   FaEraser,
-  FaMoneyBill
+  FaMoneyBill,
+  FaTicketAlt
 } from 'react-icons/fa';
 import { useAppContext } from '../context/AppContext';
 import './Todo.css';
@@ -36,6 +37,7 @@ function Todo() {
     setTokens, 
     xp,
     setXp,
+    tickets,
     inventoryItems, 
     equipAbility, 
     equippedAbilities, 
@@ -90,7 +92,10 @@ function Todo() {
     if (!isTaskDueToday(bankTask)) return false;
     
     // Check if task is not already in active tasks
-    return !activeTasks.some(activeTask => activeTask.id === bankTask.id);
+    return !activeTasks.some(activeTask => 
+      activeTask.text === bankTask.text && 
+      activeTask.rarity === bankTask.rarity && 
+      activeTask.repetition === bankTask.repetition);
   });
   
   // Get all tasks due today (from both active tasks and bank)
@@ -408,6 +413,22 @@ function Todo() {
 
   return (
     <div className="todo-container">
+      {/* Mobile Stats Display */}
+      <div className="mobile-stats-display">
+        <div className="mobile-stat-item">
+          <FaCoins className="mobile-stat-icon tokens" />
+          <span className="mobile-stat-value">{tokens}</span>
+        </div>
+        <div className="mobile-stat-item">
+          <FaTrophy className="mobile-stat-icon xp" />
+          <span className="mobile-stat-value">{xp}</span>
+        </div>
+        <div className="mobile-stat-item">
+          <FaTicketAlt className="mobile-stat-icon tickets" />
+          <span className="mobile-stat-value">{tickets}</span>
+        </div>
+      </div>
+      
       <h2>Tasks</h2>
       
       {/* Progress Bar for Today's Tasks */}
