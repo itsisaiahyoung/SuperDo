@@ -18,13 +18,11 @@ function Header() {
   };
 
   return (
-    <header className="app-header">
-      <div className="header-left">
-        <div className="logo">
-          <FaCheckSquare className="logo-icon" />
-          <h1>SuperDo</h1>
-          <span className="season-title">Season One</span>
-        </div>
+    <header className="header">
+      <div className="logo">
+        <FaCheckSquare className="logo-icon" />
+        <h1>SuperDo</h1>
+        <span className="season-title">Season One</span>
       </div>
       
       <div className="header-right">
@@ -33,20 +31,20 @@ function Header() {
           <span>Events</span>
         </button>
         
-        <div className="currency">
-          <div className="currency-item">
+        <div className="currency-container">
+          <div className="currency">
             <FaCoins className="currency-icon tokens" />
-            <span>{tokens}</span>
+            <span className="currency-value">{tokens}</span>
           </div>
           
-          <div className="currency-item">
+          <div className="currency">
             <FaTrophy className="currency-icon xp" />
-            <span>{xp}</span>
+            <span className="currency-value">{xp}</span>
           </div>
           
-          <div className="currency-item">
+          <div className="currency">
             <FaTicketAlt className="currency-icon tickets" />
-            <span>{tickets}</span>
+            <span className="currency-value">{tickets}</span>
           </div>
         </div>
         
@@ -64,7 +62,7 @@ function Header() {
             <div className="modal-header">
               <h2>Upcoming Events</h2>
               <button 
-                className="close-button" 
+                className="close-button"
                 onClick={() => setShowEventsModal(false)}
               >
                 <FaTimes />
@@ -73,26 +71,24 @@ function Header() {
             
             <div className="events-list">
               <div className="event-item">
-                <div className="event-date">May 15</div>
+                <div className="event-date">
+                  <div className="event-month">JUN</div>
+                  <div className="event-day">15</div>
+                </div>
                 <div className="event-content">
-                  <h3>Double Tokens Weekend</h3>
-                  <p>Complete tasks to earn 2x tokens all weekend!</p>
+                  <h3>Summer Challenge</h3>
+                  <p>Complete daily tasks to earn double tokens in our special summer event!</p>
                 </div>
               </div>
               
               <div className="event-item">
-                <div className="event-date">May 20</div>
-                <div className="event-content">
-                  <h3>Special Lootbox Sale</h3>
-                  <p>All lootboxes are 20% off for 24 hours only.</p>
+                <div className="event-date">
+                  <div className="event-month">JUL</div>
+                  <div className="event-day">01</div>
                 </div>
-              </div>
-              
-              <div className="event-item">
-                <div className="event-date">June 1</div>
                 <div className="event-content">
-                  <h3>Summer Theme Launch</h3>
-                  <p>New exclusive summer themes will be available in the shop!</p>
+                  <h3>New Abilities Release</h3>
+                  <p>Check out the new abilities coming to the shop in July!</p>
                 </div>
               </div>
             </div>

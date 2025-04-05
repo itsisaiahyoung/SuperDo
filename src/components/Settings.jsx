@@ -2,17 +2,29 @@ import React, { useState } from 'react';
 import { 
   FaMoon, FaBell, FaSync, FaFileExport, FaTrashAlt, 
   FaDatabase, FaStar, FaRegStar, FaCalendarAlt, FaCoins,
-  FaPlus, FaCrown
+  FaPlus, FaCrown, FaCloudUploadAlt
 } from 'react-icons/fa';
 import { useAppContext } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { doc, setDoc, collection } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import './Settings.css';
 
 function Settings() {
   const { 
     taskBank, 
     addTaskToBank, 
-    removeTaskFromBank 
+    removeTaskFromBank,
+    tokens,
+    xp,
+    tickets,
+    inventoryItems,
+    activeTasks
   } = useAppContext();
+  
+  const { currentUser } = useAuth();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
   
   // Task form state
   const [newTask, setNewTask] = useState('');
@@ -51,6 +63,73 @@ function Settings() {
       case 4: return 'epic';
       case 5: return 'legendary';
       default: return 'common';
+    }
+  };
+  
+  // Push data to Firebase
+  const pushToFirebase = async () => {
+    if (!currentUser) {
+      setSyncMessage('Error: You must be logged in to sync data');
+      return;
+    }
+    
+    setIsSyncing(true);
+    setSyncMessage('Syncing data to Firebase...');
+    
+    try {
+      // Create/update user document
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        displayName: currentUser.displayName || 'User',
+        tokens,
+        xp,
+        tickets,
+        lastUpdated: new Date()
+      }, { merge: true });
+      
+      // Create/update inventory collection
+      const inventoryCollectionRef = collection(db, 'users', currentUser.uid, 'inventory');
+      for (const item of inventoryItems) {
+        await setDoc(doc(inventoryCollectionRef, item.id.toString()), {
+          ...item,
+          userId: currentUser.uid,
+          lastUpdated: new Date()
+        });
+      }
+      
+      // Create/update task bank collection
+      const taskBankCollectionRef = collection(db, 'users', currentUser.uid, 'taskBank');
+      for (const task of taskBank) {
+        await setDoc(doc(taskBankCollectionRef, task.id.toString()), {
+          ...task,
+          userId: currentUser.uid,
+          lastUpdated: new Date()
+        });
+      }
+      
+      // Create/update active tasks collection
+      const activeTasksCollectionRef = collection(db, 'users', currentUser.uid, 'activeTasks');
+      for (const task of activeTasks) {
+        await setDoc(doc(activeTasksCollectionRef, task.id.toString()), {
+          ...task,
+          userId: currentUser.uid,
+          lastUpdated: new Date()
+        });
+      }
+      
+      setSyncMessage('Data successfully synced to Firebase!');
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSyncMessage('');
+      }, 3000);
+    } catch (error) {
+      console.error('Error syncing data:', error);
+      setSyncMessage(`Error: ${error.message}`);
+    } finally {
+      setIsSyncing(false);
     }
   };
   
@@ -262,10 +341,22 @@ function Settings() {
           <button className="settings-button">
             <FaFileExport /> Export Data
           </button>
+          <button 
+            className="settings-button"
+            onClick={pushToFirebase}
+            disabled={isSyncing || !currentUser}
+          >
+            <FaCloudUploadAlt /> {isSyncing ? 'Syncing...' : 'Push to Firebase'}
+          </button>
           <button className="settings-button danger">
             <FaTrashAlt /> Reset App
           </button>
         </div>
+        {syncMessage && (
+          <div className={`sync-message ${syncMessage.includes('Error') ? 'error' : 'success'}`}>
+            {syncMessage}
+          </div>
+        )}
       </div>
     </div>
   );

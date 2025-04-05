@@ -11,31 +11,90 @@ const getTodayDate = () => {
 
 // Initial items data
 const initialItems = [
-  { id: 1, name: 'Random Task', type: 'ability', icon: 'dice', description: 'Generate a random task of varying difficulty', owned: true },
+  {
+    id: 1,
+    name: 'Lootbox',
+    type: 'lootbox',
+    icon: 'custom-lootbox',
+    description: 'Contains 10-100 XP. Open to boost your productivity journey!',
+    price: 150,
+    owned: false,
+    quantity: 0
+  },
+  {
+    id: 201, 
+    name: '5 Tickets', 
+    type: 'ticket', 
+    icon: 'custom-ticket', 
+    description: 'Use tickets to unlock special rewards', 
+    price: 600, 
+    amount: 5,
+    owned: false,
+    quantity: 0
+  },
+  {
+    id: 202, 
+    name: '20 Tickets', 
+    type: 'ticket', 
+    icon: 'custom-ticket', 
+    description: 'Use tickets to unlock special rewards', 
+    price: 2000, 
+    amount: 20,
+    owned: false,
+    quantity: 0
+  },
+  {
+    id: 203, 
+    name: '50 Tickets', 
+    type: 'ticket', 
+    icon: 'custom-ticket', 
+    description: 'Use tickets to unlock special rewards', 
+    price: 4500, 
+    amount: 50,
+    owned: false,
+    quantity: 0
+  },
+  {
+    id: 11,
+    name: 'Time Warp',
+    type: 'ability',
+    icon: 'clock',
+    description: 'Reset daily task timers',
+    price: 800,
+    owned: false,
+    quantity: 0
+  },
+  {
+    id: 12,
+    name: 'Double Rewards',
+    type: 'ability',
+    icon: 'gem',
+    description: 'Double tokens for next 5 tasks',
+    price: 1200,
+    owned: false,
+    quantity: 0
+  },
+  {
+    id: 13,
+    name: 'Task Skip',
+    type: 'ability',
+    icon: 'forward',
+    description: 'Skip a difficult task without penalty',
+    price: 500,
+    owned: false,
+    quantity: 0
+  },
   { id: 2, name: 'Flip Coin', type: 'ability', icon: 'exchange-alt', description: 'Flip for either an easy or hard task', owned: true },
   { id: 3, name: 'Card Monte', type: 'ability', icon: 'play-circle', description: 'Play 3-card monte for a task reward', owned: true },
-  { id: 4, name: 'Common Loot Box', type: 'lootbox', icon: 'box', description: 'Contains 10-50 XP', owned: true, rarity: 'common' },
-  { id: 5, name: 'Rare Loot Box', type: 'lootbox', icon: 'gift', description: 'Contains 50-100 XP', owned: true, rarity: 'rare' },
-  { id: 6, name: 'Epic Loot Box', type: 'lootbox', icon: 'trophy', description: 'Contains 100-200 XP', owned: false, rarity: 'epic' },
+  { id: 4, name: 'Lootbox', type: 'lootbox', icon: 'custom-lootbox', description: 'Contains 10-100 XP', owned: true },
   { id: 7, name: 'XP Booster', type: 'armor', icon: 'tachometer-alt', description: 'Increase XP gain by 2%', owned: true, rarity: 'common' },
   { id: 8, name: 'Token Booster', type: 'armor', icon: 'coins', description: 'Increase token gain by 2%', owned: true, rarity: 'common' },
   { id: 9, name: 'Task Eraser', type: 'weapon', icon: 'eraser', description: 'Delete a task (5% success rate)', owned: true, rarity: 'common', cooldown: 'daily' },
-  { id: 10, name: 'Token Generator', type: 'weapon', icon: 'money-bill', description: 'Add 500 tokens (5% success rate)', owned: true, rarity: 'common', cooldown: 'daily' },
-  { id: 11, name: 'Time Warp', type: 'ability', icon: 'clock', description: 'Reset daily task timers', owned: false },
-  { id: 12, name: 'Double Rewards', type: 'ability', icon: 'gem', description: 'Double tokens for next 5 tasks', owned: false },
-  { id: 13, name: 'Task Skip', type: 'ability', icon: 'forward', description: 'Skip a difficult task without penalty', owned: false }
+  { id: 10, name: 'Token Generator', type: 'weapon', icon: 'money-bill', description: 'Add 500 tokens (5% success rate)', owned: true, rarity: 'common', cooldown: 'daily' }
 ];
 
 // Initial task bank data
-const initialTaskBank = [
-  { id: 1, text: "Clean your desk", repetition: "weekly", rarity: "common", tokenValue: 10 },
-  { id: 2, text: "Exercise for 20 minutes", repetition: "daily", rarity: "uncommon", tokenValue: 25 },
-  { id: 3, text: "Read 30 pages", repetition: "daily", rarity: "uncommon", tokenValue: 25 },
-  { id: 4, text: "Organize your files", repetition: "monthly", rarity: "rare", tokenValue: 50 },
-  { id: 5, text: "Meditate for 15 minutes", repetition: "daily", rarity: "rare", tokenValue: 50 },
-  { id: 6, text: "Complete a work project", repetition: "one-time", rarity: "epic", tokenValue: 100 },
-  { id: 7, text: "Deep clean your living space", repetition: "monthly", rarity: "legendary", tokenValue: 150 }
-];
+const initialTaskBank = [];
 
 // Define milestone rewards
 const milestoneRewards = [
@@ -310,6 +369,32 @@ export const AppProvider = ({ children }) => {
     return { success: false, message: 'Unknown weapon effect' };
   };
   
+  // Use lootbox to get random XP
+  const useLootbox = (item) => {
+    // Generate random XP amount between 10 and 100
+    const xpAmount = Math.floor(Math.random() * 91) + 10;
+    
+    // Add XP
+    setXp(prevXp => prevXp + xpAmount);
+    
+    // Update inventory - reduce quantity
+    updateInventoryItem(item.id, { quantity: item.quantity - 1 });
+    
+    return { success: true, xpAmount };
+  };
+  
+  // Use ticket to add tickets to the user
+  const useTicket = (item) => {
+    // Add tickets based on the amount
+    const ticketAmount = item.amount || 1;
+    setTickets(prevTickets => prevTickets + ticketAmount);
+    
+    // Update inventory - reduce quantity
+    updateInventoryItem(item.id, { quantity: item.quantity - 1 });
+    
+    return { success: true, ticketAmount };
+  };
+  
   // Use item/ability
   const useItem = (itemId) => {
     const item = inventoryItems.find(item => item.id === itemId);
@@ -318,34 +403,12 @@ export const AppProvider = ({ children }) => {
     
     // Handle loot boxes
     if (item.type === 'lootbox') {
-      // Generate random XP based on loot box rarity
-      let minXP = 10;
-      let maxXP = 50;
-      
-      if (item.rarity === 'rare') {
-        minXP = 50;
-        maxXP = 100;
-      } else if (item.rarity === 'epic') {
-        minXP = 100;
-        maxXP = 200;
-      }
-      
-      // Random XP within range
-      const xpAmount = Math.floor(Math.random() * (maxXP - minXP + 1)) + minXP;
-      
-      // Add XP
-      setXp(prevXP => prevXP + xpAmount);
-      
-      // Remove loot box from inventory
-      setInventoryItems(prevItems => 
-        prevItems.map(invItem => 
-          invItem.id === itemId
-            ? { ...invItem, owned: false } // Set owned to false to remove it
-            : invItem
-        )
-      );
-      
-      return { success: true, xpAmount };
+      return useLootbox(item);
+    }
+    
+    // Handle tickets
+    if (item.type === 'ticket') {
+      return useTicket(item);
     }
     
     // Handle weapons
@@ -519,6 +582,17 @@ export const AppProvider = ({ children }) => {
     };
   };
   
+  // Update specific inventory item
+  const updateInventoryItem = (itemId, updates) => {
+    setInventoryItems(prevItems => 
+      prevItems.map(item => 
+        item.id === itemId 
+          ? { ...item, ...updates } 
+          : item
+      )
+    );
+  };
+  
   // Context value
   const value = {
     tokens,
@@ -554,7 +628,8 @@ export const AppProvider = ({ children }) => {
     getMilestoneData,
     weaponCooldowns,
     getXpBonus,
-    getTokenBonus
+    getTokenBonus,
+    updateInventoryItem
   };
   
   return (
